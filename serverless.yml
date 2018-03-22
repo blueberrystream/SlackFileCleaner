@@ -1,0 +1,32 @@
+service: SlackFileCleaner
+provider:
+  name: aws
+  timeout: 90 # seconds
+  runtime: python3.6
+  stage:  ${opt:stage, self:custom.defaultStage}
+  region: ${opt:region, self:custom.defaultRegion}
+  profile: ${opt:profile, self:custom.defaultProfile}
+custom:
+  defaultStage: dev
+  defaultRegion: ap-northeast-1
+  defaultProfile: default
+  otherfile:
+    environment:
+      dev: ${file(./environment_dev.yml)}
+      prd: ${file(./environment_prd.yml)}
+  alerts: # alert plugin
+    stages:
+      - ${opt:stage, self:custom.defaultStage}
+    alarms:
+      - functionErrors
+      - functionThrottles
+functions:
+  fnc:
+    handler: main.handler
+    events:
+      - schedule: cron(30 3 ? * 2#1 *) # Invoke at UTC3:30(JST12:30) the first Monday of each month
+      ##- schedlue: cron(30 3 * * ? *)  # Invoke at UTC3:30(JST12:30) every day
+    environment:
+      ${self:custom.otherfile.environment.${self:provider.stage}}
+plugins:
+  - serverless-plugin-aws-alerts
