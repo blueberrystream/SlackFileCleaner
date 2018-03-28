@@ -13,27 +13,31 @@ logger.setLevel(logging.INFO)
 class PostJson(object):
     def __init__(self):
         self.LEGACY_TOKEN = os.environ['LEGACY_TOKEN']
+
     def headers(self):
         return {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Bearer {0}'.format(self.LEGACY_TOKEN)
         }
-    def file_list(self,page):
+
+    def file_list(self, page):
         return {
             'token': self.LEGACY_TOKEN,
             'count': '100',
             'page': page
         }
-    def file_delete(self,file):
+
+    def file_delete(self, file):
         return {
             'token': self.LEGACY_TOKEN,
             'file': file
         }
 
+
 def handler(event, context):
-    CLEAN_AFTER_DAYS =os.environ['CLEAN_AFTER_DAYS']
+    CLEAN_AFTER_DAYS = os.environ['CLEAN_AFTER_DAYS']
     # list all files / you can only get 100 files/1 page at files.list
-    for cnt_page in range(1,100):
+    for cnt_page in range(1, 100):
         url = 'https://slack.com/api/files.list'
         post_body = PostJson().file_list(cnt_page)
         req = urllib.request.Request(
@@ -46,7 +50,7 @@ def handler(event, context):
             logger.info('check file timestamp: %s ', file.get('id', ''))
             # get timestamp of the file
             ts = file.get('timestamp',
-                                '1000000000')  # epoch 2001/9/9 10:46:40 if blank
+                          '1000000000')  # epoch 2001/9/9 10:46:40 if blank
             ts_datetime = datetime.fromtimestamp(float(ts))
             now_datetime = datetime.now()
             diff_datetime = now_datetime - ts_datetime
@@ -63,11 +67,11 @@ def handler(event, context):
                     method='POST',
                     headers=post_head)
                 res = urllib.request.urlopen(req)
-                #tmp = json.loads(res.read().decode('utf8')) #dbg
-                #print (tmp) #dbg
+                # tmp = json.loads(res.read().decode('utf8')) #dbg
+                # print (tmp) #dbg
                 logger.info('message result: %s', res.msg)
         # exit if all files are checked
-        if len(files.get('files',0)) < 100:
-            print('done! :' + str(len(files.get('files',0))))
+        if len(files.get('files', 0)) < 100:
+            print('done! :' + str(len(files.get('files', 0))))
             break
     return 'ok'
